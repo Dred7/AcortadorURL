@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acortador de URLs</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Acortador de URLs</h1>
+        <form id="shortenForm">
+            <input type="url" id="urlInput" placeholder="Pega tu URL larga aquí" required>
+            <button type="submit">Acortar</button>
+        </form>
+        <div class="url-list">
+            <h2>URLs Acortadas Recientes</h2>
+            <ul id="urlHistory"></ul>
+        </div>
+        <div id="result"></div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
