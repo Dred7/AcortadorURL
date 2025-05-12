@@ -23,13 +23,17 @@ def get_db():
         return conn
     except mysql.connector.Error as err:
         print(f"Error de conexión a MySQL: {err}")
-        raise
+        return None
 # Crea la tabla si no existe
 def init_db():
+    conn = None
     try:
         conn = get_db()
+        if conn is None:
+            print("⚠️ No se pudo conectar a la DB. Reintentando...")
+            return
+            
         cursor = conn.cursor()
-        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS urls (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,10 +44,11 @@ def init_db():
             )
         ''')
         conn.commit()
+        print("✅ Tabla 'urls' creada/verificada")
     except mysql.connector.Error as err:
         print(f"Error al crear tabla: {err}")
     finally:
-        if conn.is_connected():
+        if conn and conn.is_connected():
             conn.close()
 
 init_db()
