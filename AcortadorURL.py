@@ -5,7 +5,7 @@ import os
 from flask_cors import CORS
 from datetime import datetime
 
-app = Flask(__name__, static_folder='../static', template_folder='../templates')
+app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Configuracion de cors para permitir solicitudes de apps android
 CORS(app)
@@ -44,7 +44,7 @@ def init_db():
             )
         ''')
         conn.commit()
-        print("✅ Tabla 'urls' creada/verificada")
+        print("Tabla 'urls' creada/verificada")
     except mysql.connector.Error as err:
         print(f"Error al crear tabla: {err}")
     finally:
