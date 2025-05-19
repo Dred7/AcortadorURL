@@ -7,11 +7,19 @@ from datetime import datetime
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-# Configuracion de cors para permitir solicitudes de apps android
+# Configuración de CORS para permitir solicitudes desde apps Android
 CORS(app)
 
-# Configuración de la base de datos
+## FUNCIONES DE BASE DE DATOS ##
+
 def get_db():
+    """
+    Establece conexión con la base de datos MySQL.
+    Utiliza variables de entorno para la configuración con valores por defecto.
+    
+    Returns:
+        conn: Objeto de conexión a MySQL o None si hay error
+    """
     try:
         conn = mysql.connector.connect(
             host=os.getenv('MYSQLHOST', 'localhost'),
@@ -24,13 +32,22 @@ def get_db():
     except mysql.connector.Error as err:
         print(f"Error de conexión a MySQL: {err}")
         return None
-# Crea la tabla si no existe
+
 def init_db():
+    """
+    Inicializa la base de datos creando la tabla 'urls' si no existe.
+    La tabla almacena:
+    - id: Identificador único
+    - original_url: URL original
+    - short_code: Código corto único
+    - created_at: Fecha de creación
+    - clicks: Contador de accesos
+    """
     conn = None
     try:
         conn = get_db()
         if conn is None:
-            print("⚠️ No se pudo conectar a la DB. Reintentando...")
+            print("No se pudo conectar a la DB. Reintentando...")
             return
             
         cursor = conn.cursor()
@@ -51,11 +68,24 @@ def init_db():
         if conn and conn.is_connected():
             conn.close()
 
+# Inicializar la base de datos al iniciar la aplicación
 init_db()
 
-# Endpoint para acortar URL (API)
+## ENDPOINTS DE LA API ##
+
 @app.route('/api/shorten', methods=['POST'])
 def shorten_url():
+    """
+    Endpoint para acortar URLs.
+    
+    Método: POST
+    Parámetros (JSON):
+    - url: URL original a acortar
+    
+    Retorna:
+    - JSON con la URL original y la URL acortada
+    - Códigos de estado HTTP apropiados para errores
+    """
     data = request.get_json()
     if not data or 'url' not in data:
         return jsonify({"error": "URL necesaria"}), 400
@@ -64,7 +94,8 @@ def shorten_url():
     if not original_url.startswith(('http://', 'https://')):
         original_url = f'https://{original_url}'
     
-    short_code = secrets.token_urlsafe(4)[:6]  # Ejemplo: "AbCd12"
+    # Generar código corto aleatorio de 6 caracteres
+    short_code = secrets.token_urlsafe(4)[:6]
     
     try:
         conn = get_db()
@@ -77,7 +108,7 @@ def shorten_url():
         )
         conn.commit()
         
-        # Obtener URL base automáticamente
+        # Construir URL completa con el host actual
         host_url = request.host_url
         
         return jsonify({
@@ -102,11 +133,23 @@ def shorten_url():
         return jsonify({"error": str(e)}), 500
         
     finally:
-        if conn.is_connected():
+        if conn and conn.is_connected():
             conn.close()
-# End point para listar URLs
+
 @app.route('/api/urls', methods=['GET'])
 def list_urls():
+    """
+    Endpoint para listar todas las URLs acortadas.
+    
+    Método: GET
+    Parámetros: Ninguno
+    
+    Retorna:
+    - JSON con lista de URLs (original, acortada, fecha creación, clics)
+    - Ordenadas por fecha descendente (más recientes primero)
+    - Límite de 100 registros
+    """
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
@@ -121,6 +164,7 @@ def list_urls():
         urls = cursor.fetchall()
         host_url = request.host_url
         
+        # Formatear respuesta
         return jsonify([{
             "original": url['original_url'],
             "short": f"{host_url}{url['short_code']}",
@@ -132,12 +176,65 @@ def list_urls():
         return jsonify({"error": str(e)}), 500
         
     finally:
-        if conn.is_connected():
+        if conn and conn.is_connected():
             conn.close()
 
-# Redirección desde la URL corta
+@app.route('/api/urls/<short_code>', methods=['DELETE'])
+def delete_url(short_code):
+    """
+    Endpoint para eliminar una URL acortada.
+    
+    Método: DELETE
+    Parámetros:
+    - short_code: Código corto de la URL a eliminar
+    
+    Retorna:
+    - JSON con mensaje de éxito o error
+    - Códigos de estado HTTP apropiados
+    """
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Verificar si la URL existe
+        cursor.execute(
+            'SELECT id FROM urls WHERE short_code = %s',
+            (short_code,)
+        )
+        if not cursor.fetchone():
+            return jsonify({"error": "URL no encontrada"}), 404
+        
+        # Eliminar la URL
+        cursor.execute(
+            'DELETE FROM urls WHERE short_code = %s',
+            (short_code,)
+        )
+        conn.commit()
+        
+        return jsonify({"message": "URL eliminada correctamente"})
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
 @app.route('/<short_code>', methods=['GET'])
 def redirect_url(short_code):
+    """
+    Endpoint para redireccionar desde una URL corta a la original.
+    Incrementa el contador de clics cada vez que se accede.
+    
+    Parámetros:
+    - short_code: Código corto de la URL
+    
+    Retorna:
+    - Redirección a la URL original
+    - Error 404 si no se encuentra la URL
+    """
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
@@ -150,7 +247,7 @@ def redirect_url(short_code):
         result = cursor.fetchone()
         
         if not result:
-            return jsonify({"error": "URL not found"}), 404
+            return jsonify({"error": "URL no encontrada"}), 404
         
         # Actualizar contador de clics
         cursor.execute(
@@ -165,22 +262,26 @@ def redirect_url(short_code):
         return jsonify({"error": str(e)}), 500
         
     finally:
-        if conn.is_connected():
+        if conn and conn.is_connected():
             conn.close()
 
-# Página principal (Frontend)
+## FRONTEND ##
+
 @app.route('/')
 def home():
+    """Renderiza la página principal del acortador de URLs"""
     return render_template('index.html')
 
-# Servir archivos estáticos (CSS/JS)
 @app.route('/static/<path:filename>')
 def serve_static(filename):
+    """Sirve archivos estáticos (CSS, JS, imágenes)"""
     return send_from_directory(app.static_folder, filename)
 
-# Health check para Railway
+## HEALTH CHECK ##
+
 @app.route('/health')
 def health_check():
+    """Endpoint para verificar el estado del servicio"""
     return jsonify({"status": "healthy"})
 
 if __name__ == '__main__':
