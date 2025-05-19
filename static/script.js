@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p><strong>URL original:</strong> <a href="${data.original_url}" target="_blank">${truncateText(data.original_url, 50)}</a></p>
                     <p><strong>URL acortada:</strong> <a href="${data.short_url}" target="_blank">${data.short_url}</a></p>
                     <button onclick="copyToClipboard('${data.short_url}')">Copiar</button>
+                    <button class="delete-btn" onclick="deleteUrl('${url.short.split('/').pop()}')">Eliminar</button>
                 `;
                 
                 // Actualizar el historial
@@ -94,4 +95,27 @@ function copyToClipboard(text) {
             document.body.removeChild(textarea);
             alert('URL copiada!');
         });
+}
+// Función para eliminar una URL
+async function deleteUrl(shortCode) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta URL?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/urls/${shortCode}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert('URL eliminada correctamente');
+            loadUrlHistory(); // Recargar la lista después de eliminar
+        } else {
+            const errorData = await response.json();
+            alert(`Error al eliminar: ${errorData.error}`);
+        }
+    } catch (error) {
+        console.error('Error eliminando URL:', error);
+        alert('Error al conectar con el servidor');
+    }
 }
