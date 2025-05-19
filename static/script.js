@@ -65,6 +65,7 @@ async function loadUrlHistory() {
                     <p><strong>Original:</strong> <a href="${url.original}" target="_blank">${truncateText(url.original, 40)}</a></p>
                     <p><strong>Acortada:</strong> <a href="${url.short}" target="_blank">${url.short}</a></p>
                     <button onclick="copyToClipboard('${url.short}')">Copiar</button>
+                    <button class="delete-btn" onclick="deleteUrl('${url.short.split('/').pop()}')">Eliminar</button>
                 </div>
             </li>
         `).join('');
