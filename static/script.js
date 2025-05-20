@@ -62,9 +62,9 @@ async function loadUrlHistory() {
         historyList.innerHTML = urls.map(url => `
             <li>
                 <div class="url-entry">
-                    <p><strong>Original:</strong> <a href="${url.original}" target="_blank">${truncateText(url.original, 40)}</a></p>
-                    <p><strong>Acortada:</strong> <a href="${url.short}" target="_blank">${url.short}</a></p>
-                    <button onclick="copyToClipboard('${url.short}')">Copiar</button>
+                    <p><strong>Original:</strong> <a href="${url.original_url}" target="_blank">${truncateText(url.original_url, 50)}</a></p>
+                    <p><strong>Acortada:</strong> <a href="${url.short_url}" target="_blank">${url.short_url}</a></p>
+                    <button onclick="copyToClipboard('${url.short_url}')">Copiar</button>
                     <button class="delete-btn" onclick="deleteUrl('${url.short.split('/').pop()}')">Eliminar</button>
                 </div>
             </li>
