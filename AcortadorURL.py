@@ -171,8 +171,8 @@ def list_urls():
         
         # Formatear respuesta
         return jsonify([{
-            "original": url['original_url'],
-            "short": f"{host_url}{url['short_code']}",
+            "original_url": url['original_url'],
+            "short_url": f"{host_url}{url['short_code']}",
             "created_at": url['created_at'].isoformat() if url['created_at'] else None,
             "clicks": url['clicks']
         } for url in urls])
