@@ -64,13 +64,15 @@ async function loadUrlHistory() {
                 <div class="url-entry">
                     <p><strong>Original:</strong> <a href="${url.original_url}" target="_blank">${truncateText(url.original_url, 50)}</a></p>
                     <p><strong>Acortada:</strong> <a href="${url.short_url}" target="_blank">${url.short_url}</a></p>
+                    <p><small>Creado: ${new Date(url.created_at).toLocaleString()} | Clicks: ${url.clicks}</small></p>
                     <button onclick="copyToClipboard('${url.short_url}')">Copiar</button>
-                    <button class="delete-btn" onclick="deleteUrl('${url.short.split('/').pop()}')">Eliminar</button>
+                    <button class="delete-btn" onclick="deleteUrl('${url.short_url.split('/').pop()}')">Eliminar</button>
                 </div>
             </li>
         `).join('');
     } catch (error) {
         console.error('Error cargando historial:', error);
+        document.getElementById('urlHistory').innerHTML = '<li>Error cargando el historial</li>';
     }
 }
 
