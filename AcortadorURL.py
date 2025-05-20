@@ -8,8 +8,13 @@ from datetime import datetime
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # Configuración de CORS para permitir solicitudes desde apps Android
-CORS(app)
-
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 ## FUNCIONES DE BASE DE DATOS ##
 
 def get_db():
